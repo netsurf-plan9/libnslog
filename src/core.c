@@ -20,12 +20,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 static bool nslog__corked = true;
 
 static struct nslog_cork_chain {
 	struct nslog_cork_chain *next;
-	nslog_entry_t *entry;
-} *nslog__cork_chain = NULL;
+	nslog_entry_context_t context;
+        char message[0]; /* NUL terminated */
+} *nslog__cork_chain = NULL, *nslog__cork_chain_last = NULL;
 
 static nslog_callback nslog__cb = NULL;
 static void *nslog__cb_ctx = NULL;
@@ -70,58 +72,56 @@ static void nslog__normalise_category(nslog_category_t *cat)
 	}
 }
 
-static void nslog__deliver(nslog_entry_t *entry)
+static void nslog__log_corked(nslog_entry_context_t *ctx,
+			      int measured_len,
+			      const char *fmt,
+			      va_list args)
 {
-	/* TODO: Add filtering here */
-	if (nslog__cb != NULL) {
-		if (entry->category->name == NULL) {
-			nslog__normalise_category(entry->category);
-		}
-		(*nslog__cb)(nslog__cb_ctx, entry);
+	/* If corked, we need to store a copy */
+	struct nslog_cork_chain *newcork = malloc(sizeof(*newcork) + measured_len + 1);
+	if (newcork == NULL) {
+		/* Wow, something went wrong */
+		return;
+	}
+	newcork->context = *ctx;
+	vsprintf(newcork->message, fmt, args);
+	if (nslog__cork_chain == NULL) {
+		nslog__cork_chain = nslog__cork_chain_last = newcork;
+	} else {
+		nslog__cork_chain_last->next = newcork;
+		nslog__cork_chain_last = newcork;
 	}
 }
 
-void nslog__log(nslog_category_t *category,
-		nslog_level level,
-		const char *filename,
-		int lineno,
-		const char *funcname,
+static void nslog__log_uncorked(nslog_entry_context_t *ctx,
+				const char *fmt,
+				va_list args)
+{
+	/* TODO: Add filtering here */
+	if (nslog__cb != NULL) {
+		if (ctx->category->name == NULL) {
+			nslog__normalise_category(ctx->category);
+		}
+		(*nslog__cb)(nslog__cb_ctx, ctx, fmt, args);
+	}
+}
+
+void nslog__log(nslog_entry_context_t *ctx,
 		const char *pattern,
 		...)
 {
 	va_list ap;
 	va_start(ap, pattern);
-	va_list ap2;
-	va_copy(ap2, ap);
-	int slen = vsnprintf(NULL, 0, pattern, ap);
-	va_end(ap);
-	nslog_entry_t *entry = malloc(sizeof(nslog_entry_t) + slen + 1);
-	if (entry == NULL) {
-		/* We're at ENOMEM! log entry is lost */
-		va_end(ap2);
-		return;
-	}
-	entry->category = category;
-	entry->level = level;
-	entry->filename = filename;
-	entry->funcname = funcname;
-	entry->lineno = lineno;
-	vsprintf(entry->message, pattern, ap2);
-	va_end(ap2);
 	if (nslog__corked) {
-		struct nslog_cork_chain *chained = malloc(sizeof(struct nslog_cork_chain));
-		if (chained == NULL) {
-			/* ENOMEM during corked operation! wow */
-			free(entry);
-			return;
-		}
-		chained->next = nslog__cork_chain;
-		chained->entry = entry;
-		nslog__cork_chain = chained;
+		va_list ap2;
+		va_copy(ap2, ap);
+		int slen = vsnprintf(NULL, 0, pattern, ap);
+		va_end(ap);
+		nslog__log_corked(ctx, slen, pattern, ap2);
+		va_end(ap2);
 	} else {
-		/* Not corked */
-		nslog__deliver(entry);
-		free(entry);
+		nslog__log_uncorked(ctx, pattern, ap);
+		va_end(ap);
 	}
 }
 
@@ -133,14 +133,30 @@ nslog_error nslog_set_render_callback(nslog_callback cb, void *context)
 	return NSLOG_NO_ERROR;
 }
 
+
+static void __nslog__deliver_corked_entry(nslog_entry_context_t *ctx,
+					  const char *fmt,
+					  ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	if (nslog__cb != NULL) {
+		(*nslog__cb)(nslog__cb_ctx, ctx, fmt, args);
+	}
+	va_end(args);
+}
+
 nslog_error nslog_uncork()
 {
 	if (nslog__corked) {
 		while (nslog__cork_chain != NULL) {
 			struct nslog_cork_chain *ent = nslog__cork_chain;
 			nslog__cork_chain = ent->next;
-			nslog__deliver(ent->entry);
-			free(ent->entry);
+			if (ent->context.category->name == NULL) {
+				nslog__normalise_category(ent->context.category);
+			}
+			__nslog__deliver_corked_entry(&ent->context,
+						      "%s", ent->message);
 			free(ent);
 		}
 		nslog__corked = false;

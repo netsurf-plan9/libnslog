@@ -15,6 +15,8 @@
 #ifndef NSLOG_NSLOG_H_
 #define NSLOG_NSLOG_H_
 
+#include <stdarg.h>
+
 typedef enum {
         NSLOG_LEVEL_DEEPDEBUG = 0,
         NSLOG_LEVEL_DEBUG = 1,
@@ -45,16 +47,15 @@ typedef struct nslog_category_s {
         struct nslog_category_s *next;
 } nslog_category_t;
 
-typedef struct nslog_entry_s {
+typedef struct nslog_entry_context_s {
         nslog_category_t *category;
         nslog_level level;
         const char *filename;
 	const char *funcname;
         int lineno;
-        char message[0]; /* NUL terminated */
-} nslog_entry_t;
+} nslog_entry_context_t;
 
-#define NSLOG_DECLARE_CATEGORY(catname)		\
+#define NSLOG_DECLARE_CATEGORY(catname)				\
 	extern nslog_category_t __nslog_category_##catname
 
 #define NSLOG_DEFINE_CATEGORY(catname, description)	\
@@ -75,31 +76,31 @@ typedef struct nslog_entry_s {
 		NULL,							\
 	}
 
-#define NSLOG(catname, level, logmsg, args...)		\
-	if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
-		nslog__log(&__nslog_category_##catname,	\
-			   NSLOG_LEVEL_##level,		\
-			   __FILE__,			\
-			   __LINE__,			\
-			   __PRETTY_FUNCTION__,		\
-			   logmsg,			\
-			   ##args);			\
-	}
+#define NSLOG(catname, level, logmsg, args...)				\
+	do {								\
+		if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
+			nslog_entry_context_t ctx = {			\
+				&__nslog_category_##catname,		\
+				NSLOG_LEVEL_##level,			\
+				__FILE__,				\
+				__PRETTY_FUNCTION__,			\
+				__LINE__,				\
+			};						\
+			nslog__log(&ctx, logmsg, ##args);		\
+		}							\
+	} while(0)
 
-void nslog__log(nslog_category_t *category,
-		nslog_level level,
-		const char *filename,
-		int lineno,
-		const char *funcname,
+void nslog__log(nslog_entry_context_t *ctx,
 		const char *pattern,
-		...) __attribute__ ((format (printf, 6, 7)));
+		...) __attribute__ ((format (printf, 2, 3)));
 
 typedef enum {
 	NSLOG_NO_ERROR = 0,
 	NSLOG_NO_MEMORY = 1,
 } nslog_error;
 
-typedef void (*nslog_callback)(void *context, nslog_entry_t *msg);
+typedef void (*nslog_callback)(void *context, nslog_entry_context_t *ctx,
+			       const char *fmt, va_list args);
 
 nslog_error nslog_set_render_callback(nslog_callback cb, void *context);
 
