@@ -279,9 +279,11 @@ END_TEST
 
 START_TEST (test_nslog_parse_and_sprintf)
 {
-	nslog_filter_t *filt;
+	nslog_filter_t *filt = NULL;
 	fail_unless(nslog_filter_from_text("cat:test", &filt) == NSLOG_NO_ERROR,
 		    "Unable to parse cat:test");
+	fail_unless(filt != NULL,
+		    "Strange, despite parsing okay, filt was NULL");
 	char *ct = nslog_filter_sprintf(filt);
 	nslog_filter_unref(filt);
 	fail_unless(strcmp(ct, "cat:test") == 0,

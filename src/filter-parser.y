@@ -33,6 +33,10 @@ static void filter_error(FILTER_LTYPE *loc, nslog_filter_t **output, const char 
 	nslog_filter_t *filter;
 }
 
+%destructor {
+	nslog_filter_unref($$);
+} <filter>
+
 %token <patt> T_PATTERN
 %token <level> T_LEVEL
 
@@ -88,35 +92,45 @@ expression ::= term | '!' term
 level_filter:
 	T_LEVEL_SPECIFIER T_LEVEL
 	{
-		assert(nslog_filter_level_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_level_new($2, &$$) != NSLOG_NO_ERROR) {
+			YYABORT ;
+		}
 	}
 	;
 
 category_filter:
 	T_CATEGORY_SPECIFIER T_PATTERN
 	{
-		assert(nslog_filter_category_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_category_new($2, &$$) != NSLOG_NO_ERROR) {
+			YYABORT ;
+		}
 	}
 	;
 
 filename_filter:
 	T_FILENAME_SPECIFIER T_PATTERN
 	{
-		assert(nslog_filter_filename_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_filename_new($2, &$$) != NSLOG_NO_ERROR) {
+			YYABORT ;
+		}
 	}
 	;
 
 dirname_filter:
 	T_DIRNAME_SPECIFIER T_PATTERN
 	{
-		assert(nslog_filter_dirname_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_dirname_new($2, &$$) != NSLOG_NO_ERROR) {
+			YYABORT ;
+		}
 	}
 	;
 
 funcname_filter:
 	T_FUNCNAME_SPECIFIER T_PATTERN
 	{
-		assert(nslog_filter_funcname_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_funcname_new($2, &$$) != NSLOG_NO_ERROR) {
+			YYABORT ;
+		}
 	}
 	;
 
@@ -135,7 +149,11 @@ basic_filter:
 and_filter:
 	'(' filter T_OP_AND filter ')'
 	{
-		assert(nslog_filter_and_new($2, $4, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_and_new($2, $4, &$$) != NSLOG_NO_ERROR) {
+			nslog_filter_unref($2);
+			nslog_filter_unref($4);
+			YYABORT ;
+		}
 		nslog_filter_unref($2);
 		nslog_filter_unref($4);
 	}
@@ -144,7 +162,11 @@ and_filter:
 or_filter:
 	'(' filter T_OP_OR filter ')'
 	{
-		assert(nslog_filter_or_new($2, $4, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_or_new($2, $4, &$$) != NSLOG_NO_ERROR) {
+			nslog_filter_unref($2);
+			nslog_filter_unref($4);
+			YYABORT ;
+		}
 		nslog_filter_unref($2);
 		nslog_filter_unref($4);
 	}
@@ -153,7 +175,11 @@ or_filter:
 xor_filter:
 	'(' filter '^' filter ')'
 	{
-		assert(nslog_filter_xor_new($2, $4, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_xor_new($2, $4, &$$) != NSLOG_NO_ERROR) {
+			nslog_filter_unref($2);
+			nslog_filter_unref($4);
+			YYABORT ;
+		}
 		nslog_filter_unref($2);
 		nslog_filter_unref($4);
 	}
@@ -170,7 +196,10 @@ binary_filter:
 not_filter:
 	'!' filter
 	{
-		assert(nslog_filter_not_new($2, &$$) == NSLOG_NO_ERROR);
+		if (nslog_filter_not_new($2, &$$) != NSLOG_NO_ERROR) {
+			nslog_filter_unref($2);
+			YYABORT ;
+		}
 		nslog_filter_unref($2);
 	}
 	;
@@ -186,7 +215,7 @@ filter:
 toplevel:
 	filter
 	{
-		$$ = *output = $1;
+		$$ = *output = nslog_filter_ref($1);
 	}
 	|
 	error
