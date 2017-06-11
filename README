@@ -1,20 +1,24 @@
-Libnsutils - NetSurf utility functions
-======================================
+Libnslog - NetSurf Logging Library
+==================================
 
 Overview
 --------
 
-  Libnsutils provides a small number of useful utility routines which
-  require platform-specific implementations.
+  Libnslog provides a category-based logging library which supports complex
+  logging filters, multiple log levels, and provides context through to client
+  applications.
 
 Requirements
 ------------
 
-  Libnsutils requires the following tools:
+  Libnslog requires the following tools:
 
     + A C99 capable C compiler
     + GNU make or compatible
     + Pkg-config
+    + Check (test framework only)
+    + Flex
+    + Bison
 
 Compilation
 -----------
@@ -26,15 +30,14 @@ Compilation
 Verification
 ------------
 
-  To verify that the library is working, it is necessary to specify a 
+  To verify that the library is working, it is necessary to specify a
   different makefile target than that used for normal compilation, thus:
-  
+
   		$ make test
 
 API documentation
 -----------------
 
-  Currently, there is none. However, the code is well commented and the 
-  public API may be found in the "include" directory. The testcase sources 
+  Currently, there is none. However, the code is well commented and the
+  public API may be found in the "include" directory. The testcase sources
   may also be of use in working out how to use it.
-
