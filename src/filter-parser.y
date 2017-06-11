@@ -14,7 +14,7 @@
 #include "filter-parser.h"
 #include "filter-lexer.h"
 
-static void filter_error(FILTER_LTYPE *loc, nslog_filter_t **output, const char *msg)
+static void filter_error(YYLTYPE *loc, nslog_filter_t **output, const char *msg)
 {
 	(void)loc;
 	(void)output;
