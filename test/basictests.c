@@ -340,6 +340,255 @@ START_TEST (test_nslog_parse_and_sprintf_all_levels)
 }
 END_TEST
 
+START_TEST (test_nslog_parse_and_sprintf_all_kinds)
+{
+	nslog_filter_t *filt = NULL;
+	const char *input =
+		"!((((lvl:WARNING || cat:test) && file:foo) ^ dir:bar) || func:baz)";
+	fail_unless(nslog_filter_from_text(input, &filt) == NSLOG_NO_ERROR,
+		    "Unable to parse all kind test");
+	fail_unless(filt != NULL,
+		    "Strange, despite parsing okay, filt was NULL");
+	char *ct = nslog_filter_sprintf(filt);
+	nslog_filter_unref(filt);
+	fail_unless(strcmp(ct, input) == 0,
+		    "Printed parsed all-kind not right");
+}
+END_TEST
+
+/**** The next set of tests need a fixture set for a variety of filters ****/
+
+static const char *anchor_context_3 = "3";
+
+static void
+with_trivial_filter_context_setup(void)
+{
+	captured_render_context = NULL;
+	memset(&captured_context, 0, sizeof(captured_context));
+	memset(captured_rendered_message, 0, sizeof(captured_rendered_message));
+	captured_rendered_message_length = 0;
+	captured_message_count = 0;
+	fail_unless(nslog_set_render_callback(
+			    nslog__test__render_function,
+			    (void *)anchor_context_3) == NSLOG_NO_ERROR,
+		    "Unable to set up render callback");
+}
+
+static void
+with_trivial_filter_context_teardown(void)
+{
+        /* Nothing to do to tear down */
+	fail_unless(nslog_filter_set_active(NULL, NULL) == NSLOG_NO_ERROR,
+		    "Unable to clear active filter");
+}
+
+START_TEST (test_nslog_filter_filename)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_filename_new("basictests.c", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to file:basictests.c");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_3,
+		    "Captured context wasn't passed through");
+	fail_unless(captured_rendered_message_length == 5,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
+		    "Mesage wasn't as expected");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_full_filename)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_filename_new("test/basictests.c", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to file:test/basictests.c");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_3,
+		    "Captured context wasn't passed through");
+	fail_unless(captured_rendered_message_length == 5,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
+		    "Mesage wasn't as expected");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_out_filename)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_filename_new("testmain.c", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to file:testmain.c");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 0,
+		    "Captured message count was wrong");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_level)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_level_new(NSLOG_LEVEL_WARN, &filter) == NSLOG_NO_ERROR,
+		    "Unable to create level filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to lvl:WARN");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_3,
+		    "Captured context wasn't passed through");
+	fail_unless(captured_rendered_message_length == 5,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
+		    "Mesage wasn't as expected");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_out_level)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_level_new(NSLOG_LEVEL_ERR, &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to lvl:ERR");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 0,
+		    "Captured message count was wrong");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_dirname)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_dirname_new("test", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create level filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:test");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_3,
+		    "Captured context wasn't passed through");
+	fail_unless(captured_rendered_message_length == 5,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
+		    "Mesage wasn't as expected");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_out_dirname)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_dirname_new("src", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:src");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 0,
+		    "Captured message count was wrong");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_funcname)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_funcname_new("test_nslog_filter_funcname", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create level filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:test");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_3,
+		    "Captured context wasn't passed through");
+	fail_unless(captured_rendered_message_length == 5,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
+		    "Mesage wasn't as expected");
+}
+END_TEST
+
+START_TEST (test_nslog_filter_out_funcname)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_funcname_new("test_nslog_filter_funcname", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:src");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 0,
+		    "Captured message count was wrong");
+}
+END_TEST
+
+START_TEST (test_nslog_complex_filter1)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_from_text("(lvl:WARN || (lvl:DEBUG && cat:test/sub))", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:src");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(sub, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong (1)");
+	NSLOG(test, DEBUG, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong (2)");
+	NSLOG(sub, DEBUG, "Hello");
+	fail_unless(captured_message_count == 2,
+		    "Captured message count was wrong (3)");
+}
+END_TEST
+
+START_TEST (test_nslog_complex_filter2)
+{
+	nslog_filter_t *filter;
+	fail_unless(nslog_filter_from_text("!(lvl:WARN ^ cat:test/sub)", &filter) == NSLOG_NO_ERROR,
+		    "Unable to create filename filter");
+	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to dir:src");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(sub, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong (1)");
+	NSLOG(test, WARN, "Hello");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong (2)");
+	NSLOG(test, DEBUG, "Hello");
+	fail_unless(captured_message_count == 2,
+		    "Captured message count was wrong (3)");
+}
+END_TEST
+
 /**** And the suites are set up here ****/
 
 void
@@ -370,7 +619,24 @@ nslog_basic_suite(SRunner *sr)
         tcase_add_test(tc_basic, test_nslog_basic_filter_sprintf);
         tcase_add_test(tc_basic, test_nslog_parse_and_sprintf);
         tcase_add_test(tc_basic, test_nslog_parse_and_sprintf_all_levels);
+	tcase_add_test(tc_basic, test_nslog_parse_and_sprintf_all_kinds);
         suite_add_tcase(s, tc_basic);
+
+	tc_basic = tcase_create("Trivial, varied, filter checks");
+	tcase_add_checked_fixture(tc_basic, with_trivial_filter_context_setup,
+				  with_trivial_filter_context_teardown);
+	tcase_add_test(tc_basic, test_nslog_filter_filename);
+	tcase_add_test(tc_basic, test_nslog_filter_full_filename);
+	tcase_add_test(tc_basic, test_nslog_filter_out_filename);
+	tcase_add_test(tc_basic, test_nslog_filter_level);
+	tcase_add_test(tc_basic, test_nslog_filter_out_level);
+	tcase_add_test(tc_basic, test_nslog_filter_dirname);
+	tcase_add_test(tc_basic, test_nslog_filter_out_dirname);
+	tcase_add_test(tc_basic, test_nslog_filter_funcname);
+	tcase_add_test(tc_basic, test_nslog_filter_out_funcname);
+	tcase_add_test(tc_basic, test_nslog_complex_filter1);
+	tcase_add_test(tc_basic, test_nslog_complex_filter2);
+	suite_add_tcase(s, tc_basic);
 
         srunner_add_suite(sr, s);
 }
