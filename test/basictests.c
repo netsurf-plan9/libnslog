@@ -19,6 +19,7 @@
 #endif
 
 NSLOG_DEFINE_CATEGORY(test, "Top level test category");
+NSLOG_DEFINE_SUBCATEGORY(test, sub, "Lower level test category");
 
 static void *captured_render_context = NULL;
 static nslog_entry_context_t captured_context = { 0 };
@@ -113,10 +114,27 @@ START_TEST (test_nslog_trivial_uncorked_message)
 }
 END_TEST
 
+START_TEST (test_nslog_subcategory_name)
+{
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	fail_unless(captured_message_count == 0,
+		    "Unusual, we had messages from before uncorking");
+	NSLOG(sub, INFO, "Hello %s", "world");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_1,
+		    "Captured context wasn't passed through");
+	fail_unless(strcmp(captured_context.category->name, "test/sub") == 0,
+		    "Captured context category wasn't normalised");
+}
+END_TEST
+
 /**** The next set of tests need a fixture set for filters ****/
 
 static nslog_filter_t *cat_test = NULL;
 static nslog_filter_t *cat_another = NULL;
+static nslog_filter_t *cat_test_sub = NULL;
 
 static const char *anchor_context_2 = "2";
 
@@ -136,6 +154,8 @@ with_simple_filter_context_setup(void)
 		    "Unable to create a category filter for 'test'");
 	fail_unless(nslog_filter_category_new("another", &cat_another) == NSLOG_NO_ERROR,
 		    "Unable to create a category filter for 'another'");
+	fail_unless(nslog_filter_category_new("test/sub", &cat_test_sub) == NSLOG_NO_ERROR,
+		    "Unable to create a category filter for 'test/sub'");
 }
 
 static void
@@ -146,6 +166,7 @@ with_simple_filter_context_teardown(void)
 		    "Unable to clear active filter");
 	cat_test = nslog_filter_unref(cat_test);
 	cat_another = nslog_filter_unref(cat_another);
+	cat_test_sub = nslog_filter_unref(cat_test_sub);
 }
 
 START_TEST (test_nslog_simple_filter_corked_message)
@@ -202,6 +223,45 @@ START_TEST (test_nslog_simple_filter_uncorked_message)
 }
 END_TEST
 
+START_TEST (test_nslog_simple_filter_subcategory_message)
+{
+	fail_unless(nslog_filter_set_active(cat_test, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to cat:test");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(sub, INFO, "Hello world");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_2,
+		    "Captured context wasn't passed through");
+	fail_unless(strcmp(captured_context.category->name, "test/sub") == 0,
+		    "Captured context category wasn't normalised");
+	fail_unless(captured_context.category == &__nslog_category_sub,
+		    "Captured context category wasn't the one we wanted");
+	fail_unless(captured_rendered_message_length == 11,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello world") == 0,
+		    "Captured message wasn't correct");
+	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
+		    "Captured message wasn't correct filename");
+	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_subcategory_message") == 0,
+		    "Captured message wasn't correct function name");
+
+}
+END_TEST
+
+START_TEST (test_nslog_simple_filter_out_subcategory_message)
+{
+	fail_unless(nslog_filter_set_active(cat_test_sub, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to cat:test/sub");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, INFO, "Hello world");
+	fail_unless(captured_message_count == 0,
+		    "Captured message count was wrong");
+}
+END_TEST
+
 START_TEST (test_nslog_basic_filter_sprintf)
 {
 	char *ct = nslog_filter_sprintf(cat_test);
@@ -243,6 +303,7 @@ nslog_basic_suite(SRunner *sr)
                                   with_simple_context_teardown);
         tcase_add_test(tc_basic, test_nslog_trivial_corked_message);
         tcase_add_test(tc_basic, test_nslog_trivial_uncorked_message);
+	tcase_add_test(tc_basic, test_nslog_subcategory_name);
         suite_add_tcase(s, tc_basic);
 
         tc_basic = tcase_create("Simple filter checks");
@@ -251,6 +312,8 @@ nslog_basic_suite(SRunner *sr)
                                   with_simple_filter_context_teardown);
         tcase_add_test(tc_basic, test_nslog_simple_filter_corked_message);
         tcase_add_test(tc_basic, test_nslog_simple_filter_uncorked_message);
+        tcase_add_test(tc_basic, test_nslog_simple_filter_subcategory_message);
+        tcase_add_test(tc_basic, test_nslog_simple_filter_out_subcategory_message);
         tcase_add_test(tc_basic, test_nslog_basic_filter_sprintf);
         tcase_add_test(tc_basic, test_nslog_parse_and_sprintf);
         suite_add_tcase(s, tc_basic);
