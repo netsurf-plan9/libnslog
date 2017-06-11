@@ -18,12 +18,6 @@
 #define UNUSED(x) (void)(x)
 #endif
 
-#ifndef NDEBUG
-
-/* Tests go here which need assert() to be checked */
-
-#endif
-
 NSLOG_DEFINE_CATEGORY(test, "Top level test category");
 
 static void *captured_render_context = NULL;
@@ -181,25 +175,42 @@ START_TEST (test_nslog_simple_filter_corked_message)
 }
 END_TEST
 
+START_TEST (test_nslog_simple_filter_uncorked_message)
+{
+	fail_unless(nslog_filter_set_active(cat_test, NULL) == NSLOG_NO_ERROR,
+		    "Unable to set active filter to cat:test");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	NSLOG(test, INFO, "Hello world");
+	fail_unless(captured_message_count == 1,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_2,
+		    "Captured context wasn't passed through");
+	fail_unless(strcmp(captured_context.category->name, "test") == 0,
+		    "Captured context category wasn't normalised");
+	fail_unless(captured_context.category == &__nslog_category_test,
+		    "Captured context category wasn't the one we wanted");
+	fail_unless(captured_rendered_message_length == 11,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Hello world") == 0,
+		    "Captured message wasn't correct");
+	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
+		    "Captured message wasn't correct filename");
+	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_uncorked_message") == 0,
+		    "Captured message wasn't correct function name");
+	
+}
+END_TEST
+
 /**** And the suites are set up here ****/
 
 void
 nslog_basic_suite(SRunner *sr)
 {
         Suite *s = suite_create("libnslog: Basic tests");
-        TCase *tc_basic = tcase_create("Abort checking");
-        
-#ifndef NDEBUG
-	/*
-        tcase_add_test_raise_signal(tc_basic,
-                                    test_lwc_string_hash_value_aborts,
-                                    SIGABRT);
-	*/
-#endif
-        
-        suite_add_tcase(s, tc_basic);
-        
-        tc_basic = tcase_create("Simple log checks, no filters");
+        TCase *tc_basic = NULL;
+	
+	tc_basic = tcase_create("Simple log checks, no filters");
         
         tcase_add_checked_fixture(tc_basic, with_simple_context_setup,
                                   with_simple_context_teardown);
@@ -212,6 +223,7 @@ nslog_basic_suite(SRunner *sr)
         tcase_add_checked_fixture(tc_basic, with_simple_filter_context_setup,
                                   with_simple_filter_context_teardown);
         tcase_add_test(tc_basic, test_nslog_simple_filter_corked_message);
+        tcase_add_test(tc_basic, test_nslog_simple_filter_uncorked_message);
         suite_add_tcase(s, tc_basic);
         
         srunner_add_suite(sr, s);
