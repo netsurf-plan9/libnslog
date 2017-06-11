@@ -130,6 +130,39 @@ START_TEST (test_nslog_subcategory_name)
 }
 END_TEST
 
+START_TEST (test_nslog_two_corked_messages)
+{
+	NSLOG(test, INFO, "First");
+	NSLOG(sub, CRIT, "Second");
+	fail_unless(nslog_uncork() == NSLOG_NO_ERROR,
+		    "Unable to uncork");
+	fail_unless(captured_message_count == 2,
+		    "Captured message count was wrong");
+	fail_unless(captured_render_context == anchor_context_1,
+		    "Captured context wasn't passed through");
+	fail_unless(strcmp(captured_context.category->name, "test/sub") == 0,
+		    "Captured context category wasn't normalised");
+	fail_unless(captured_context.category == &__nslog_category_sub,
+		    "Captured context category wasn't the one we wanted");
+	fail_unless(captured_rendered_message_length == 6,
+		    "Captured message wasn't correct length");
+	fail_unless(strcmp(captured_rendered_message, "Second") == 0,
+		    "Captured message wasn't correct");
+	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
+		    "Captured message wasn't correct filename");
+	fail_unless(strcmp(captured_context.funcname, "test_nslog_two_corked_messages") == 0,
+		    "Captured message wasn't correct function name");
+}
+END_TEST
+
+START_TEST (test_nslog_check_bad_level)
+{
+	fail_unless(strcmp(nslog_level_name((nslog_level)-1),
+			   "**UNKNOWN**") == 0,
+		    "Failed to fail to render bad level");
+}
+END_TEST
+
 /**** The next set of tests need a fixture set for filters ****/
 
 static nslog_filter_t *cat_test = NULL;
@@ -291,6 +324,22 @@ START_TEST (test_nslog_parse_and_sprintf)
 }
 END_TEST
 
+START_TEST (test_nslog_parse_and_sprintf_all_levels)
+{
+	nslog_filter_t *filt = NULL;
+	const char *input =
+		"((((((lvl:DEEPDEBUG || lvl:DEBUG) || lvl:VERBOSE) || lvl:INFO) || lvl:WARNING) || lvl:ERROR) || lvl:CRITICAL)";
+	fail_unless(nslog_filter_from_text(input, &filt) == NSLOG_NO_ERROR,
+		    "Unable to parse all level test");
+	fail_unless(filt != NULL,
+		    "Strange, despite parsing okay, filt was NULL");
+	char *ct = nslog_filter_sprintf(filt);
+	nslog_filter_unref(filt);
+	fail_unless(strcmp(ct, input) == 0,
+		    "Printed parsed all-level not right");
+}
+END_TEST
+
 /**** And the suites are set up here ****/
 
 void
@@ -306,6 +355,8 @@ nslog_basic_suite(SRunner *sr)
         tcase_add_test(tc_basic, test_nslog_trivial_corked_message);
         tcase_add_test(tc_basic, test_nslog_trivial_uncorked_message);
 	tcase_add_test(tc_basic, test_nslog_subcategory_name);
+	tcase_add_test(tc_basic, test_nslog_two_corked_messages);
+	tcase_add_test(tc_basic, test_nslog_check_bad_level);
         suite_add_tcase(s, tc_basic);
 
         tc_basic = tcase_create("Simple filter checks");
@@ -318,6 +369,7 @@ nslog_basic_suite(SRunner *sr)
         tcase_add_test(tc_basic, test_nslog_simple_filter_out_subcategory_message);
         tcase_add_test(tc_basic, test_nslog_basic_filter_sprintf);
         tcase_add_test(tc_basic, test_nslog_parse_and_sprintf);
+        tcase_add_test(tc_basic, test_nslog_parse_and_sprintf_all_levels);
         suite_add_tcase(s, tc_basic);
 
         srunner_add_suite(sr, s);
