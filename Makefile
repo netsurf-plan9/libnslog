@@ -17,7 +17,7 @@ NSSHARED ?= $(PREFIX)/share/netsurf-buildsystem
 include $(NSSHARED)/makefiles/Makefile.tools
 
 # Reevaluate when used, as BUILDDIR won't be defined yet
-TESTRUNNER = test/runtest.sh $(BUILDDIR) $(EXEEXT)
+TESTRUNNER = $(BUILDDIR)/test_testrunner$(EXEEXT)
 
 # Toolchain flags
 WARNFLAGS := -Wall -W -Wundef -Wpointer-arith -Wcast-align \
@@ -47,6 +47,15 @@ TESTCFLAGS := -g -O2
 TESTLDFLAGS := -lm -l$(COMPONENT) $(TESTLDFLAGS)
 
 include $(NSBUILD)/Makefile.top
+
+ifeq ($(WANT_TEST),yes)
+  ifneq ($(PKGCONFIG),)
+    TESTCFLAGS := $(TESTCFLAGS) $(shell $(PKGCONFIG) --cflags check)
+    TESTLDFLAGS := $(TESTLDFLAGS) $(shell $(PKGCONFIG) --libs check)
+  else
+    TESTLDFLAGS := $(TESTLDFLAGS) -lcheck
+  endif
+endif
 
 # Extra installation rules
 I := /$(INCLUDEDIR)/nslog

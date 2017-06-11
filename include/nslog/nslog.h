@@ -104,6 +104,7 @@ void nslog__log(nslog_entry_context_t *ctx,
 typedef enum {
 	NSLOG_NO_ERROR = 0,
 	NSLOG_NO_MEMORY = 1,
+	NSLOG_UNCORKED = 2,
 } nslog_error;
 
 typedef void (*nslog_callback)(void *context, nslog_entry_context_t *ctx,

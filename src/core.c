@@ -73,7 +73,7 @@ static void nslog__log_corked(nslog_entry_context_t *ctx,
 			      va_list args)
 {
 	/* If corked, we need to store a copy */
-	struct nslog_cork_chain *newcork = malloc(sizeof(*newcork) + measured_len + 1);
+	struct nslog_cork_chain *newcork = calloc(sizeof(struct nslog_cork_chain) + measured_len + 1, 1);
 	if (newcork == NULL) {
 		/* Wow, something went wrong */
 		return;
@@ -157,6 +157,8 @@ nslog_error nslog_uncork()
 			free(ent);
 		}
 		nslog__corked = false;
+		return NSLOG_NO_ERROR;
+	} else {
+		return NSLOG_UNCORKED;
 	}
-	return NSLOG_NO_ERROR;
 }
