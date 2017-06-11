@@ -14,6 +14,19 @@
 
 #include "nslog_internal.h"
 
+#include "filter-parser.h"
+
+/* Ensure compatability with bison 2.6 and later */
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED && defined FILTER_STYPE_IS_DECLARED
+#define YYSTYPE FILTER_STYPE
+#endif
+
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED && defined FILTER_LTYPE_IS_DECLARED
+#define YYLTYPE FILTER_LTYPE
+#endif
+
+#include "filter-lexer.h"
+
 typedef enum {
 	/* Fundamentals */
 	NSLFK_CATEGORY = 0,
@@ -307,4 +320,75 @@ bool nslog__filter_matches(nslog_entry_context_t *ctx)
 	if (nslog__active_filter == NULL)
 		return true;
 	return _nslog__filter_matches(ctx, nslog__active_filter);
+}
+
+char *nslog_filter_sprintf(nslog_filter_t *filter)
+{
+	char *ret = NULL;
+	switch (filter->kind) {
+	case NSLFK_CATEGORY:
+		ret = calloc(filter->params.str.len + 5, 1);
+		sprintf(ret, "cat:%s", filter->params.str.ptr);
+		break;
+	case NSLFK_LEVEL: {
+		const char *lvl = nslog_level_name(filter->params.level);
+		ret = calloc(strlen(lvl) + 5, 1);
+		sprintf(ret, "lvl:%s", lvl);
+		break;
+	}
+	case NSLFK_FILENAME:
+		ret = calloc(filter->params.str.len + 6, 1);
+		sprintf(ret, "file:%s", filter->params.str.ptr);
+		break;
+	case NSLFK_DIRNAME:
+		ret = calloc(filter->params.str.len + 5, 1);
+		sprintf(ret, "dir:%s", filter->params.str.ptr);
+		break;
+	case NSLFK_FUNCNAME:
+		ret = calloc(filter->params.str.len + 6, 1);
+		sprintf(ret, "func:%s", filter->params.str.ptr);
+		break;
+	case NSLFK_AND:
+	case NSLFK_OR:
+	case NSLFK_XOR: {
+		char *left = nslog_filter_sprintf(filter->params.binary.input1);
+		char *right = nslog_filter_sprintf(filter->params.binary.input2);
+		const char *op =
+			(filter->kind == NSLFK_AND) ? "&&" :
+			(filter->kind == NSLFK_OR) ? "||" : "^";
+		ret = calloc(strlen(left) + strlen(right) + 7, 1);
+		sprintf(ret, "(%s %s %s)", left, op, right);
+		free(left);
+		free(right);
+		break;
+	}
+	case NSLFK_NOT: {
+		char *input = nslog_filter_sprintf(filter->params.unary_input);
+		ret = calloc(strlen(input) + 2, 1);
+		sprintf(ret, "!%s", input);
+		free(input);
+		break;
+	}
+	default:
+		assert("Unexpected kind" == NULL);
+		return strdup("***ERROR***");
+	}
+	return ret;
+}
+
+nslog_error nslog_filter_from_text(const char *input,
+				   nslog_filter_t **output)
+{
+	int ret;
+	YY_BUFFER_STATE buffer = filter__scan_string((char *)input);
+	filter_push_buffer_state(buffer);
+	ret = filter_parse(output);
+	filter_lex_destroy();
+	switch (ret) {
+	case 0:
+		return NSLOG_NO_ERROR;
+	case 2:
+		return NSLOG_NO_MEMORY;
+	}
+	return NSLOG_PARSE_ERROR;
 }

@@ -30,6 +30,7 @@ typedef enum {
 const char *nslog_level_name(nslog_level level);
 
 #define NSLOG_LEVEL_DD		NSLOG_LEVEL_DEEPDEBUG
+#define NSLOG_LEVEL_DBG		NSLOG_LEVEL_DEBUG
 #define NSLOG_LEVEL_CHAT	NSLOG_LEVEL_VERBOSE
 #define NSLOG_LEVEL_WARN	NSLOG_LEVEL_WARNING
 #define NSLOG_LEVEL_ERR		NSLOG_LEVEL_ERROR
@@ -105,6 +106,7 @@ typedef enum {
 	NSLOG_NO_ERROR = 0,
 	NSLOG_NO_MEMORY = 1,
 	NSLOG_UNCORKED = 2,
+	NSLOG_PARSE_ERROR = 3,
 } nslog_error;
 
 typedef void (*nslog_callback)(void *context, nslog_entry_context_t *ctx,
@@ -144,5 +146,10 @@ nslog_filter_t *nslog_filter_unref(nslog_filter_t *filter);
 
 nslog_error nslog_filter_set_active(nslog_filter_t *filter,
 				    nslog_filter_t **prev);
+
+char *nslog_filter_sprintf(nslog_filter_t *filter);
+
+nslog_error nslog_filter_from_text(const char *input,
+				   nslog_filter_t **output);
 
 #endif /* NSLOG_NSLOG_H_ */

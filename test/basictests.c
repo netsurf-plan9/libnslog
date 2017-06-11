@@ -171,7 +171,7 @@ START_TEST (test_nslog_simple_filter_corked_message)
 		    "Captured message wasn't correct filename");
 	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_corked_message") == 0,
 		    "Captured message wasn't correct function name");
-	
+
 }
 END_TEST
 
@@ -198,7 +198,34 @@ START_TEST (test_nslog_simple_filter_uncorked_message)
 		    "Captured message wasn't correct filename");
 	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_uncorked_message") == 0,
 		    "Captured message wasn't correct function name");
-	
+
+}
+END_TEST
+
+START_TEST (test_nslog_basic_filter_sprintf)
+{
+	char *ct = nslog_filter_sprintf(cat_test);
+	fail_unless(ct != NULL, "Unable to sprintf");
+	fail_unless(strcmp(ct, "cat:test") == 0,
+		    "Printed category test is wrong");
+	free(ct);
+	ct = nslog_filter_sprintf(cat_another);
+	fail_unless(ct != NULL, "Unable to sprintf");
+	fail_unless(strcmp(ct, "cat:another") == 0,
+		    "Printed category another is wrong");
+	free(ct);
+}
+END_TEST
+
+START_TEST (test_nslog_parse_and_sprintf)
+{
+	nslog_filter_t *filt;
+	fail_unless(nslog_filter_from_text("cat:test", &filt) == NSLOG_NO_ERROR,
+		    "Unable to parse cat:test");
+	char *ct = nslog_filter_sprintf(filt);
+	nslog_filter_unref(filt);
+	fail_unless(strcmp(ct, "cat:test") == 0,
+		    "Printed parsed cat:test not right");
 }
 END_TEST
 
@@ -209,22 +236,24 @@ nslog_basic_suite(SRunner *sr)
 {
         Suite *s = suite_create("libnslog: Basic tests");
         TCase *tc_basic = NULL;
-	
+
 	tc_basic = tcase_create("Simple log checks, no filters");
-        
+
         tcase_add_checked_fixture(tc_basic, with_simple_context_setup,
                                   with_simple_context_teardown);
         tcase_add_test(tc_basic, test_nslog_trivial_corked_message);
         tcase_add_test(tc_basic, test_nslog_trivial_uncorked_message);
         suite_add_tcase(s, tc_basic);
-        
+
         tc_basic = tcase_create("Simple filter checks");
-        
+
         tcase_add_checked_fixture(tc_basic, with_simple_filter_context_setup,
                                   with_simple_filter_context_teardown);
         tcase_add_test(tc_basic, test_nslog_simple_filter_corked_message);
         tcase_add_test(tc_basic, test_nslog_simple_filter_uncorked_message);
+        tcase_add_test(tc_basic, test_nslog_basic_filter_sprintf);
+        tcase_add_test(tc_basic, test_nslog_parse_and_sprintf);
         suite_add_tcase(s, tc_basic);
-        
+
         srunner_add_suite(sr, s);
 }
