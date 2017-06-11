@@ -41,7 +41,7 @@
 
 whitespace	[ \t]+
 
-pattern		[^ \t]+
+pattern		[^ \t:|&)^!]+
 
 %x		st_patt
 
