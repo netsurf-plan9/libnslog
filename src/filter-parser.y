@@ -221,6 +221,7 @@ toplevel:
 	error
 	{
 		(void)yylloc;
+		$$ = NULL;
 		YYABORT ;
 	}
 	;
