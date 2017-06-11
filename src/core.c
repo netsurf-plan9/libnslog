@@ -4,7 +4,7 @@
  * This file is part of libnslog.
  *
  * Licensed under the MIT License,
- *                http://www.opensource.org/licenses/mit-license.php
+ *		  http://www.opensource.org/licenses/mit-license.php
  */
 
 /**
@@ -12,21 +12,14 @@
  * NetSurf Logging Core
  */
 
-#include "nslog/nslog.h"
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "nslog_internal.h"
 
 static bool nslog__corked = true;
 
 static struct nslog_cork_chain {
 	struct nslog_cork_chain *next;
 	nslog_entry_context_t context;
-        char message[0]; /* NUL terminated */
+	char message[0]; /* NUL terminated */
 } *nslog__cork_chain = NULL, *nslog__cork_chain_last = NULL;
 
 static nslog_callback nslog__cb = NULL;
@@ -52,7 +45,7 @@ const char *nslog_level_name(nslog_level level)
 	case NSLOG_LEVEL_CRITICAL:
 		return "CRITICAL";
 	};
-	
+
 	return "**UNKNOWN**";
 }
 
@@ -61,6 +54,7 @@ static void nslog__normalise_category(nslog_category_t *cat)
 {
 	if (cat->parent == NULL) {
 		cat->name = strdup(cat->cat_name);
+		cat->namelen = strlen(cat->name);
 	} else {
 		nslog__normalise_category(cat->parent);
 		cat->name = malloc(strlen(cat->parent->name) + strlen(cat->cat_name) + 2);
@@ -68,6 +62,7 @@ static void nslog__normalise_category(nslog_category_t *cat)
 		strcat(cat->name, "/");
 		strcat(cat->name, cat->cat_name);
 		cat->next = nslog__all_categories;
+		cat->namelen = strlen(cat->name);
 		nslog__all_categories = cat;
 	}
 }
@@ -102,7 +97,8 @@ static void nslog__log_uncorked(nslog_entry_context_t *ctx,
 		if (ctx->category->name == NULL) {
 			nslog__normalise_category(ctx->category);
 		}
-		(*nslog__cb)(nslog__cb_ctx, ctx, fmt, args);
+		if (nslog__filter_matches(ctx))
+			(*nslog__cb)(nslog__cb_ctx, ctx, fmt, args);
 	}
 }
 
@@ -129,7 +125,7 @@ nslog_error nslog_set_render_callback(nslog_callback cb, void *context)
 {
 	nslog__cb = cb;
 	nslog__cb_ctx = context;
-	
+
 	return NSLOG_NO_ERROR;
 }
 
@@ -155,12 +151,12 @@ nslog_error nslog_uncork()
 			if (ent->context.category->name == NULL) {
 				nslog__normalise_category(ent->context.category);
 			}
-			__nslog__deliver_corked_entry(&ent->context,
-						      "%s", ent->message);
+			if (nslog__filter_matches(&ent->context))
+				__nslog__deliver_corked_entry(&ent->context,
+							      "%s", ent->message);
 			free(ent);
 		}
 		nslog__corked = false;
 	}
 	return NSLOG_NO_ERROR;
 }
-

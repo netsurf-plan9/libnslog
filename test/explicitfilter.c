@@ -10,6 +10,7 @@
 #include "nslog/nslog.h"
 
 #include <stdio.h>
+#include <assert.h>
 
 NSLOG_DEFINE_CATEGORY(test, "Test category");
 
@@ -30,12 +31,20 @@ static void test_render_function(
 int main(int argc, char **argv)
 {
 	nslog_set_render_callback(test_render_function, NULL);
-	NSLOG(test, INFO, "Pre-uncorking");
-	fprintf(stderr, "About to nslog_uncork()\n");
 	nslog_uncork();
-	fprintf(stderr, "Uncorked now\n");
-	NSLOG(test, WARN, "argc=%d", argc);
-	for (int i = 0; i < argc; ++i)
-		NSLOG(test, WARN, "argv[%d] = %s", i, argv[i]);
+
+	nslog_filter_t *cat_test, *cat_another;
+
+	assert(nslog_filter_category_new("test", &cat_test) == NSLOG_NO_ERROR);
+	assert(nslog_filter_category_new("another", &cat_another) == NSLOG_NO_ERROR);
+
+	NSLOG(test, INFO, "Hurrah, a message!");
+	assert(nslog_filter_set_active(cat_test, NULL) == NSLOG_NO_ERROR);
+	NSLOG(test, INFO, "You should see me.");
+	assert(nslog_filter_set_active(cat_another, NULL) == NSLOG_NO_ERROR);
+	NSLOG(test, INFO, "You should not see me!");
+	assert(nslog_filter_set_active(NULL, NULL) == NSLOG_NO_ERROR);
+	NSLOG(test, INFO, "You should see this one though.");
+
 	return 0;
 }

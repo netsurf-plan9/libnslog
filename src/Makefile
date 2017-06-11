@@ -1,3 +1,3 @@
-DIR_SOURCES := core.c
+DIR_SOURCES := core.c filter.c
 
 include $(NSBUILD)/Makefile.subdir
