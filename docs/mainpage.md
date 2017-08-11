@@ -17,6 +17,8 @@ libraries can verify the log messages sent.  If a library might produce a lot
 of logging then it must implement a client in its test drivers or it might run
 out of RAM while running tests.
 
+If you're not into prose, [here is a commented example](md_docs_examples.html).
+
 How to log stuff
 ----------------
 
