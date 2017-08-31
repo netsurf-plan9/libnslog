@@ -173,7 +173,7 @@ typedef struct nslog_entry_context_s {
 #define NSLOG(catname, level, logmsg, args...)				\
 	do {								\
 		if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
-			static nslog_entry_context_t ctx = {		\
+			static nslog_entry_context_t _nslog_ctx = {	\
 				&__nslog_category_##catname,		\
 				NSLOG_LEVEL_##level,			\
 				__FILE__,				\
@@ -182,7 +182,7 @@ typedef struct nslog_entry_context_s {
 				sizeof(__PRETTY_FUNCTION__) - 1,	\
 				__LINE__,				\
 			};						\
-			nslog__log(&ctx, logmsg, ##args);		\
+			nslog__log(&_nslog_ctx, logmsg, ##args);	\
 		}							\
 	} while(0)
 
