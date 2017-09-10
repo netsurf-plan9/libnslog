@@ -258,6 +258,24 @@ nslog_error nslog_set_render_callback(nslog_callback cb, void *context);
 nslog_error nslog_uncork(void);
 
 /**
+ * Finalise log categories, release filter handles, etc.
+ *
+ * Since logging categories can have memory allocated to them at runtime,
+ * and the logging filters can have references held inside the library,
+ * clients which wish to be 'valgrind clean' may wish to call this to
+ * ensure that any memory allocated inside the nslog library is released.
+ *
+ * This does not remove the active log callback, so logging calls after this
+ * returns will still work (though will be unfiltered).  Of course, they will
+ * cause memory to be allocated once more.  This function can be called as
+ * many times as desired, it is idempotent.
+ *
+ * If the logging was corked when this was called, pending corked messages
+ * will be delivered if necessary before any filters are removed.
+ */
+void nslog_cleanup(void);
+
+/**
  * Log filter handle
  *
  * nslog allows clients to set a complex filter which can be used to restrict

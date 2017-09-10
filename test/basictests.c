@@ -61,7 +61,7 @@ with_simple_context_setup(void)
 static void
 with_simple_context_teardown(void)
 {
-        /* Nothing to do to tear down */
+	nslog_cleanup();
 }
 
 START_TEST (test_nslog_trivial_corked_message)
@@ -194,12 +194,12 @@ with_simple_filter_context_setup(void)
 static void
 with_simple_filter_context_teardown(void)
 {
-        /* Nothing to do to tear down */
 	fail_unless(nslog_filter_set_active(NULL, NULL) == NSLOG_NO_ERROR,
 		    "Unable to clear active filter");
 	cat_test = nslog_filter_unref(cat_test);
 	cat_another = nslog_filter_unref(cat_another);
 	cat_test_sub = nslog_filter_unref(cat_test_sub);
+	nslog_cleanup();
 }
 
 START_TEST (test_nslog_simple_filter_corked_message)
@@ -377,9 +377,9 @@ with_trivial_filter_context_setup(void)
 static void
 with_trivial_filter_context_teardown(void)
 {
-        /* Nothing to do to tear down */
 	fail_unless(nslog_filter_set_active(NULL, NULL) == NSLOG_NO_ERROR,
 		    "Unable to clear active filter");
+	nslog_cleanup();
 }
 
 START_TEST (test_nslog_filter_filename)

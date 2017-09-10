@@ -164,3 +164,18 @@ nslog_error nslog_uncork()
 		return NSLOG_UNCORKED;
 	}
 }
+
+void nslog_cleanup()
+{
+	nslog_category_t *cat = nslog__all_categories;
+	(void)nslog_uncork();
+	(void)nslog_filter_set_active(NULL, NULL);
+	while (cat != NULL) {
+		nslog_category_t *nextcat = cat->next;
+		free(cat->name);
+		cat->name = NULL;
+		cat->namelen = 0;
+		cat->next = NULL;
+		cat = nextcat;
+	}
+}
