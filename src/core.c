@@ -52,6 +52,8 @@ const char *nslog_level_name(nslog_level level)
 
 static void nslog__normalise_category(nslog_category_t *cat)
 {
+	if (cat->name != NULL)
+		return;
 	if (cat->parent == NULL) {
 		cat->name = strdup(cat->cat_name);
 		cat->namelen = strlen(cat->name);
@@ -61,10 +63,10 @@ static void nslog__normalise_category(nslog_category_t *cat)
 		strcpy(cat->name, cat->parent->name);
 		strcat(cat->name, "/");
 		strcat(cat->name, cat->cat_name);
-		cat->next = nslog__all_categories;
 		cat->namelen = strlen(cat->name);
-		nslog__all_categories = cat;
 	}
+	cat->next = nslog__all_categories;
+	nslog__all_categories = cat;
 }
 
 static void nslog__log_corked(nslog_entry_context_t *ctx,
