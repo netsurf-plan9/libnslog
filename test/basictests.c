@@ -321,6 +321,7 @@ START_TEST (test_nslog_parse_and_sprintf)
 	nslog_filter_unref(filt);
 	fail_unless(strcmp(ct, "cat:test") == 0,
 		    "Printed parsed cat:test not right");
+	free(ct);
 }
 END_TEST
 
@@ -337,6 +338,7 @@ START_TEST (test_nslog_parse_and_sprintf_all_levels)
 	nslog_filter_unref(filt);
 	fail_unless(strcmp(ct, input) == 0,
 		    "Printed parsed all-level not right");
+	free(ct);
 }
 END_TEST
 
@@ -353,6 +355,7 @@ START_TEST (test_nslog_parse_and_sprintf_all_kinds)
 	nslog_filter_unref(filt);
 	fail_unless(strcmp(ct, input) == 0,
 		    "Printed parsed all-kind not right");
+	free(ct);
 }
 END_TEST
 
@@ -400,6 +403,7 @@ START_TEST (test_nslog_filter_filename)
 		    "Captured message wasn't correct length");
 	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
 		    "Mesage wasn't as expected");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -421,6 +425,7 @@ START_TEST (test_nslog_filter_full_filename)
 		    "Captured message wasn't correct length");
 	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
 		    "Mesage wasn't as expected");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -436,6 +441,7 @@ START_TEST (test_nslog_filter_out_filename)
 	NSLOG(test, WARN, "Hello");
 	fail_unless(captured_message_count == 0,
 		    "Captured message count was wrong");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -457,6 +463,7 @@ START_TEST (test_nslog_filter_level)
 		    "Captured message wasn't correct length");
 	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
 		    "Mesage wasn't as expected");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -472,6 +479,7 @@ START_TEST (test_nslog_filter_out_level)
 	NSLOG(test, WARN, "Hello");
 	fail_unless(captured_message_count == 0,
 		    "Captured message count was wrong");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -493,6 +501,7 @@ START_TEST (test_nslog_filter_dirname)
 		    "Captured message wasn't correct length");
 	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
 		    "Mesage wasn't as expected");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -508,6 +517,7 @@ START_TEST (test_nslog_filter_out_dirname)
 	NSLOG(test, WARN, "Hello");
 	fail_unless(captured_message_count == 0,
 		    "Captured message count was wrong");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -529,6 +539,7 @@ START_TEST (test_nslog_filter_funcname)
 		    "Captured message wasn't correct length");
 	fail_unless(strcmp(captured_rendered_message, "Hello") == 0,
 		    "Mesage wasn't as expected");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -544,6 +555,7 @@ START_TEST (test_nslog_filter_out_funcname)
 	NSLOG(test, WARN, "Hello");
 	fail_unless(captured_message_count == 0,
 		    "Captured message count was wrong");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -565,6 +577,7 @@ START_TEST (test_nslog_complex_filter1)
 	NSLOG(sub, DEBUG, "Hello");
 	fail_unless(captured_message_count == 2,
 		    "Captured message count was wrong (3)");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
@@ -586,6 +599,7 @@ START_TEST (test_nslog_complex_filter2)
 	NSLOG(test, DEBUG, "Hello");
 	fail_unless(captured_message_count == 2,
 		    "Captured message count was wrong (3)");
+	filter = nslog_filter_unref(filter);
 }
 END_TEST
 
