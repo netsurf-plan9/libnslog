@@ -26,6 +26,8 @@
 #define YYLTYPE FILTER_LTYPE
 #endif
 
+/* Ensure we use yylloc to silence "variable `yylloc` set but not used" warning */
+#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno;
 %}
 
 
