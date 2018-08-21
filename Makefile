@@ -7,7 +7,7 @@
 
 # Component settings
 COMPONENT := nslog
-COMPONENT_VERSION := 0.1.0
+COMPONENT_VERSION := 0.1.1
 # Default to a static library
 COMPONENT_TYPE ?= lib-static
 
