@@ -80,7 +80,7 @@ static void nslog__log_corked(nslog_entry_context_t *ctx,
 		return;
 	}
 	newcork->context = *ctx;
-	vsprintf(newcork->message, fmt, args);
+	vsnprintf(newcork->message, measured_len + 1, fmt, args);
 	if (nslog__cork_chain == NULL) {
 		nslog__cork_chain = nslog__cork_chain_last = newcork;
 	} else {
