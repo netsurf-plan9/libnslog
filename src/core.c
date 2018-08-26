@@ -59,11 +59,10 @@ static void nslog__normalise_category(nslog_category_t *cat)
 		cat->namelen = strlen(cat->name);
 	} else {
 		nslog__normalise_category(cat->parent);
-		cat->name = malloc(strlen(cat->parent->name) + strlen(cat->cat_name) + 2);
-		strcpy(cat->name, cat->parent->name);
-		strcat(cat->name, "/");
-		strcat(cat->name, cat->cat_name);
-		cat->namelen = strlen(cat->name);
+		int bufsz = strlen(cat->parent->name) + strlen(cat->cat_name) + 2 /* a slash and a NUL */;
+		cat->name = malloc(bufsz);
+		snprintf(cat->name, bufsz, "%s/%s", cat->parent->name, cat->cat_name);
+		cat->namelen = bufsz - 1;
 	}
 	cat->next = nslog__all_categories;
 	nslog__all_categories = cat;
