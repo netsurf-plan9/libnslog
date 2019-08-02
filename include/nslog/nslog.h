@@ -48,6 +48,17 @@ typedef enum {
  */
 const char *nslog_level_name(nslog_level level);
 
+/**
+ * Convert a logging level to a short string.
+ *
+ * The returned string is owned by the nslog library (static) and should
+ * not be freed.  It will be exactly four characters wide and suitable for
+ * logging to a file neatly.
+ *
+ * \param level The level for which you want the 'short' name.
+ */
+const char *nslog_short_level_name(nslog_level level);
+
 #define NSLOG_LEVEL_DD		NSLOG_LEVEL_DEEPDEBUG
 #define NSLOG_LEVEL_DBG		NSLOG_LEVEL_DEBUG
 #define NSLOG_LEVEL_CHAT	NSLOG_LEVEL_VERBOSE

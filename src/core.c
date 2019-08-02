@@ -49,6 +49,28 @@ const char *nslog_level_name(nslog_level level)
 	return "**UNKNOWN**";
 }
 
+const char *nslog_short_level_name(nslog_level level)
+{
+	switch (level) {
+	case NSLOG_LEVEL_DEEPDEBUG:
+		return "DDBG";
+	case NSLOG_LEVEL_DEBUG:
+		return "DBG ";
+	case NSLOG_LEVEL_VERBOSE:
+		return "VERB";
+	case NSLOG_LEVEL_INFO:
+		return "INFO";
+	case NSLOG_LEVEL_WARNING:
+		return "WARN";
+	case NSLOG_LEVEL_ERROR:
+		return "ERR ";
+	case NSLOG_LEVEL_CRITICAL:
+		return "CRIT";
+	};
+
+	return "?UNK";
+}
+
 
 static void nslog__normalise_category(nslog_category_t *cat)
 {
