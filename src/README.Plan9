@@ -1,0 +1,49 @@
+* Imported from the Linux build  (see import/build_nslog.tgz)
+
+filter-lexer.h
+filter-parser.h
+filter-lexer.c (as gen_filter-lexer.c)
+filter_parser.c (as gen_filter-parser.c)
+
+(Maybe to check if these are dependent on the cpu architecture. But genreally
+Plan 9 has mostly the same sizes of data types on different
+architectures, so I hope this will be safe.)
+
+The original .l and .y files require 'bison' and 'flex' and
+don't compile with 'lex' and 'yacc' out of the box.
+An alternative to use the precompiled files would be to
+either use ports of bison/flex in Plan 9 or to rewrite
+the .l and .y files to be compliant with lex/yacc (having
+to keep them up to date if they change).
+
+* The macro NSLOG() in '../include/nslog/nslog.h' uses GCC
+variadic arguments (...args), that I changed to using C99
+variadic style (...) and __VA_ARGS__. Maybe this change could
+make it self upstream in the main Netsurf, as it shouldn't break GCC.
+[-- check that changing ##args against __VA_ARGS__ is possible
+in all cases (regarding the number of parameters), it looks like it
+is dropping one parameter right now (todo).]
+
+To make make __VA_ARGS__ to work, I had to remove the last parameter
+as __VA_ARGS__ should always contain at least one parameter. This
+change is also done in netsurf/utils/log.h (which is used for NSLOG()
+if WITH_NSLOG is not defined.
+
+* In the declation of nslog__log(), __attribute__ ((format (printf, 2, 3)))
+is used to statically check the calling parameters to the variadic
+function. I simply deleted it. As an alternative, it might be possible
+to make the preprocessor silence it out it with something along:
+
+#define __attribute__(x)
+
+* in core.c in the struct 'nslog_cork_chain', there is a zero length string
+in the end (message[0]) this is changed to message[] as is supported by the
+Plan 9 compiler. 
+Ref: https://gcc.gnu.org/onlinedocs/gcc/Zero-Length.html
+
+* For va_copy I substitute it for an assignment (Ref. 9fans
+mailinglist by Russ Cox 2008-01-25)
+
+* Added -D_C99_SNPRINTF_EXTENSION to the makefile, so that the vsnprintf()
+of APE compiles as it should. Maybe make this option global for all makefiles
+in the project.

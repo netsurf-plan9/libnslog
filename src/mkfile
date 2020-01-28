@@ -1,0 +1,17 @@
+</$objtype/mkfile
+
+CC=pcc
+OBJ=core.$O filter.$O gen_filter-lexer.$O gen_filter-parser.$O
+HFILES=../include/nslog/nslog.h nslog_internal.h
+CFLAGS=-I ../include -I . -I ../../posix/include -D_BSD_EXTENSION -D_SUSV2_SOURCE -D_POSIX_SOURCE -D_C99_SNPRINTF_EXTENSION
+
+all:V:	libnslog.$O.a
+
+libnslog.$O.a: $OBJ $HFILES
+	ar rv libnslog.$O.a $OBJ
+
+%.$O:	%.c $HFILES
+	$CC $CFLAGS -c -o $target $stem.c
+
+clean:V:
+	rm -f $OBJ libnslog.$O.a
