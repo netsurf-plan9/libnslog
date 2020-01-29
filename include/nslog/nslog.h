@@ -12,6 +12,7 @@
  * NetSurf Logging
  */
 
+#define __PRETTY_FUNCTION__ "somefunc"
 #ifndef NSLOG_NSLOG_H_
 #define NSLOG_NSLOG_H_
 
@@ -170,7 +171,7 @@ typedef struct nslog_entry_context_s {
  * \param logmsg The log message itself (printf format string)
  * \param args The arguments for the log message
  */
-#define NSLOG(catname, level, logmsg, args...)				\
+#define NSLOG(catname, level, ...)				\
 	do {								\
 		if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
 			static nslog_entry_context_t _nslog_ctx = {	\
@@ -182,7 +183,7 @@ typedef struct nslog_entry_context_s {
 				sizeof(__PRETTY_FUNCTION__) - 1,	\
 				__LINE__,				\
 			};						\
-			nslog__log(&_nslog_ctx, logmsg, ##args);	\
+			nslog__log(&_nslog_ctx, __VA_ARGS__);	\
 		}							\
 	} while(0)
 
@@ -198,7 +199,7 @@ typedef struct nslog_entry_context_s {
  */
 void nslog__log(nslog_entry_context_t *ctx,
 		const char *pattern,
-		...) __attribute__ ((format (printf, 2, 3)));
+		...);
 
 /**
  * Log error types
