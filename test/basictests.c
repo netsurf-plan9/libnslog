@@ -83,7 +83,7 @@ START_TEST (test_nslog_trivial_corked_message)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_trivial_corked_message") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 }
 END_TEST
@@ -109,7 +109,7 @@ START_TEST (test_nslog_trivial_uncorked_message)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_trivial_uncorked_message") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 }
 END_TEST
@@ -150,7 +150,7 @@ START_TEST (test_nslog_two_corked_messages)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_two_corked_messages") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 }
 END_TEST
@@ -223,7 +223,7 @@ START_TEST (test_nslog_simple_filter_corked_message)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_corked_message") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 
 }
@@ -250,7 +250,7 @@ START_TEST (test_nslog_simple_filter_uncorked_message)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_uncorked_message") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 
 }
@@ -277,7 +277,7 @@ START_TEST (test_nslog_simple_filter_subcategory_message)
 		    "Captured message wasn't correct");
 	fail_unless(strcmp(captured_context.filename, "test/basictests.c") == 0,
 		    "Captured message wasn't correct filename");
-	fail_unless(strcmp(captured_context.funcname, "test_nslog_simple_filter_subcategory_message") == 0,
+	fail_unless(strcmp(captured_context.funcname, __func__) == 0,
 		    "Captured message wasn't correct function name");
 
 }
@@ -524,7 +524,7 @@ END_TEST
 START_TEST (test_nslog_filter_funcname)
 {
 	nslog_filter_t *filter;
-	fail_unless(nslog_filter_funcname_new("test_nslog_filter_funcname", &filter) == NSLOG_NO_ERROR,
+	fail_unless(nslog_filter_funcname_new(__func__, &filter) == NSLOG_NO_ERROR,
 		    "Unable to create level filter");
 	fail_unless(nslog_filter_set_active(filter, NULL) == NSLOG_NO_ERROR,
 		    "Unable to set active filter to dir:test");
