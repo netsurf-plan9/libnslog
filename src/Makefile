@@ -4,11 +4,17 @@ CFLAGS := $(CFLAGS) -I$(BUILDDIR) -Isrc/
 
 SOURCES := $(SOURCES) $(BUILDDIR)/filter-parser.c $(BUILDDIR)/filter-lexer.c
 
-$(BUILDDIR)/%-lexer.c $(BUILDDIR)/%-lexer.h: src/%-lexer.l
+$(BUILDDIR)/%-lexer.inc $(BUILDDIR)/%-lexer.h: src/%-lexer.l
 	$(VQ)$(ECHO) "	  FLEX: $<"
-	$(Q)$(FLEX) --outfile=$(BUILDDIR)/$(*F)-lexer.c --header-file=$(BUILDDIR)/$(*F)-lexer.h $<
+	$(Q)$(FLEX) --outfile=$(BUILDDIR)/$(*F)-lexer.inc --header-file=$(BUILDDIR)/$(*F)-lexer.h $<
+.PRECIOUS: $(BUILDDIR)/%-lexer.inc
 
-$(BUILDDIR)/%-lexer.c: $(BUILDDIR)/%-parser.h
+$(BUILDDIR)/%-lexer.inc: $(BUILDDIR)/%-parser.h
+
+$(BUILDDIR)/%-lexer.c: $(BUILDDIR)/%-lexer.inc
+	$(Q)echo "#ifndef __clang_analyzer__" > $@
+	$(Q)echo "#include \"$(notdir $<)\"" >> $@
+	$(Q)echo "#endif" >> $@
 
 # Bison 3.0 and later require api.prefix in curly braces
 # Bison 2.6 and later require api.prefix
