@@ -17,6 +17,13 @@
 
 #include <stdarg.h>
 
+#if defined(__GNUC__)
+#    define PRINTF(fmt, args) __attribute__ ((format (printf, 2, 3)))
+#elif defined(_PLAN9)
+#    pragma varargck nslog__log argpos 2
+#    define PRINTF(pos, args)
+#endif
+
 /**
  * Log levels
  *
@@ -181,7 +188,7 @@ typedef struct nslog_entry_context_s {
  * \param logmsg The log message itself (printf format string)
  * \param args The arguments for the log message
  */
-#define NSLOG(catname, level, logmsg, args...)				\
+#define NSLOG(catname, level, ...)				\
 	do {								\
 		if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) {	\
 			static nslog_entry_context_t _nslog_ctx = {	\
@@ -193,7 +200,7 @@ typedef struct nslog_entry_context_s {
 				sizeof(__PRETTY_FUNCTION__) - 1,	\
 				__LINE__,				\
 			};						\
-			nslog__log(&_nslog_ctx, logmsg, ##args);	\
+			nslog__log(&_nslog_ctx, __VA_ARGS__);	\
 		}							\
 	} while(0)
 
@@ -209,7 +216,7 @@ typedef struct nslog_entry_context_s {
  */
 void nslog__log(nslog_entry_context_t *ctx,
 		const char *pattern,
-		...) __attribute__ ((format (printf, 2, 3)));
+		...) PRINTF(2, 3);
 
 /**
  * Log error types

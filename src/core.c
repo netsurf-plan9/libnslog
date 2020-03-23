@@ -19,7 +19,7 @@ static bool nslog__corked = true;
 static struct nslog_cork_chain {
 	struct nslog_cork_chain *next;
 	nslog_entry_context_t context;
-	char message[0]; /* NUL terminated */
+	char message[]; /* NUL terminated */
 } *nslog__cork_chain = NULL, *nslog__cork_chain_last = NULL;
 
 static nslog_callback nslog__cb = NULL;
