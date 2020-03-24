@@ -18,6 +18,13 @@
 
 #include <stdarg.h>
 
+#if defined(__GNUC__)
+#    define PRINTF(fmt, args) __attribute__ ((format (printf, 2, 3)))
+#elif defined(_PLAN9)
+#    pragma varargck nslog__log argpos 2
+#    define PRINTF(pos, args)
+#endif
+
 /**
  * Log levels
  *
@@ -48,6 +55,17 @@ typedef enum {
  * \param level The level for which you want the 'canonical' name.
  */
 const char *nslog_level_name(nslog_level level);
+
+/**
+ * Convert a logging level to a short string.
+ *
+ * The returned string is owned by the nslog library (static) and should
+ * not be freed.  It will be exactly four characters wide and suitable for
+ * logging to a file neatly.
+ *
+ * \param level The level for which you want the 'short' name.
+ */
+const char *nslog_short_level_name(nslog_level level);
 
 #define NSLOG_LEVEL_DD		NSLOG_LEVEL_DEEPDEBUG
 #define NSLOG_LEVEL_DBG		NSLOG_LEVEL_DEBUG
@@ -199,7 +217,7 @@ typedef struct nslog_entry_context_s {
  */
 void nslog__log(nslog_entry_context_t *ctx,
 		const char *pattern,
-		...);
+		...) PRINTF(2, 3);
 
 /**
  * Log error types
