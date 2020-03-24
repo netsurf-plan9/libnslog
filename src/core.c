@@ -12,8 +12,6 @@
  * NetSurf Logging Core
  */
 
-#define va_copy(x, y) (x) = (y)
-
 #include "nslog_internal.h"
 
 static bool nslog__corked = true;
