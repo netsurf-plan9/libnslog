@@ -12,7 +12,6 @@
  * NetSurf Logging
  */
 
-#define __PRETTY_FUNCTION__ "somefunc"
 #ifndef NSLOG_NSLOG_H_
 #define NSLOG_NSLOG_H_
 
